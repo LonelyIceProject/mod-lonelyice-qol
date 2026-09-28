@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "lonelyice.qol",
+  "version": "1.0.0",
+  "name": { "en": "Quality of life", "ru": "Удобства" },
+  "description": {
+    "en": "Sprint for every character and auto-loot of money and quest items for real players; bots take no share.",
+    "ru": "Спринт для всех персонажей и автолут денег и квестовых предметов для живых игроков; боты не забирают долю."
+  },
+  "authors": [ "LonelyIceProject" ],
+  "license": "GPL-2.0-or-later",
+  "homepage": "https://github.com/LonelyIceProject/mod-lonelyice-qol",
+  "core": { "abi": "lonelyice-ac-1" },
+  "platforms": [ "windows-x64" ],
+  "depends": { "playerbots": ">=1.0.0" },
+  "server": { "library": "lonelyice_qol" },
+  "databases": { "world": "data/sql/db-world" }
+}

@@ -1,0 +1,38 @@
+<p align="center"><img src="logo.png" width="128" alt="logo"></p>
+
+# mod-lonelyice-qol
+
+Small quality-of-life changes for a single-player server with bots.
+
+## Features
+
+- **Sprint for everyone**: every character (and bot) gets a short sprint on the client-known Sprint spell
+  (+50% speed for 20 s, 35 s cooldown); the values apply only when players cast it, NPCs keep the original.
+- **Auto-loot for real players**: money goes straight to the bag and is split only between the real players
+  of the group (bots take no share); quest items and drops needed by an incomplete quest are picked up while
+  the player still needs them. Everything else stays on the corpse for normal loot rules.
+
+## Requirements
+
+[LonelyIceProject/mod-playerbots](https://github.com/LonelyIceProject/mod-playerbots) (bots use the sprint too).
+## Install
+
+This module is written for [LonelyIceProject/azerothcore-wotlk](https://github.com/LonelyIceProject/azerothcore-wotlk),
+a fork of AzerothCore with runtime plugins, and builds in two ways.
+
+**As a plugin** (the core built with `-DWITH_DYNAMIC_LINKING=ON`):
+
+```
+cmake -S azerothcore-wotlk -B build -DWITH_DYNAMIC_LINKING=ON -DWITH_PLAYERBOTS_HOOKS=ON ^
+      -DAC_PLUGIN_ABI=lonelyice-ac-1 "-DAC_PLUGIN_SOURCE_DIRS=<path>/mod-playerbots;<path>/mod-lonelyice-qol"
+cmake --build build --config RelWithDebInfo
+```
+
+The plugin is laid out in `bin/<config>/plugins/lonelyice.qol/`. Copy that folder into the server's `plugins` folder
+(`PluginsDir` in worldserver.conf); [LonelyIce](https://github.com/LonelyIceProject/lonelyice) does this for you.
+
+**As a classic static module**: clone into `modules/mod-lonelyice-qol` of the core and rebuild.
+## License
+
+GNU General Public License v2.0 or later, see [LICENSE](LICENSE). Part of the
+[LonelyIce](https://github.com/LonelyIceProject/lonelyice) single-player project.
