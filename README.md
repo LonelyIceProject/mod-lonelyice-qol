@@ -6,8 +6,9 @@ Small quality-of-life changes for a single-player server with bots.
 
 ## Features
 
-- **Sprint for everyone**: every character (and bot) gets a short sprint on the client-known Sprint spell
-  (+50% speed for 20 s, 35 s cooldown); the values apply only when players cast it, NPCs keep the original.
+- **Sprint for everyone**: every character (and bot) learns Sprint (+50% speed for 20 s, 35 s cooldown), a spell
+  of its own described in `data/patches.json`. The [LonelyIce](https://github.com/LonelyIceProject/lonelyice)
+  installer gives it a free spell id, adds it to the server and builds the client patch from your own client.
 - **Auto-loot for real players**: money goes straight to the bag and is split only between the real players
   of the group (bots take no share); quest items and drops needed by an incomplete quest are picked up while
   the player still needs them. Everything else stays on the corpse for normal loot rules.

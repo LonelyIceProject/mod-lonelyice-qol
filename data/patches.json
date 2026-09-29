@@ -1,0 +1,27 @@
+{
+  "ids": {
+    "sprint": { "table": "Spell.dbc", "copy": 56354 }
+  },
+  "patches": [
+    {
+      "table": "Spell.dbc",
+      "rows": [
+        {
+          "id": "@sprint",
+          "comment": "Sprint: 20 s, +50% speed, 35 s cooldown; a copy of spell 56354.",
+          "set": {
+            "29": 35000,
+            "40": 18,
+            "74": 1,
+            "80": 49,
+            "133": 516,
+            "136": { "en": "Sprint", "ru": "Спринт" },
+            "153": { "en": "" },
+            "170": { "en": "Increases movement speed by $s1% for $d.", "ru": "Увеличивает скорость передвижения на $s1% на $d." },
+            "187": { "en": "Movement speed increased by $s1%.", "ru": "Скорость передвижения увеличена на $s1%." }
+          }
+        }
+      ]
+    }
+  ]
+}

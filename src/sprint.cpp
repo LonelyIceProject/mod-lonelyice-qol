@@ -1,83 +1,45 @@
 /*
- * Custom Sprint for all players (and playerbots).
+ * Sprint for all players (and playerbots).
  *
- * Reuses client-known spell 56354 "Sprint" (+200% speed, 15s, no cooldown in DBC; otherwise
- * only used by a few NPCs). Its values are overridden here only when a player casts it, so
- * NPC usage stays untouched. Because the client's Spell.dbc has no cooldown for this spell,
- * the cooldown is sent to the client explicitly.
- *
- * Known limitation: the client tooltip still shows the original DBC text (200% / 15 sec).
+ * The spell is the plugin's own: data/patches.json adds a copy of spell 56354 with 20 s, +50% speed and a 35 s
+ * cooldown to the client and the server (spell_dbc), under an id given out when the patch was installed.
  */
 
+#include "DatabaseEnv.h"
+#include "Log.h"
 #include "MoveSpline.h"
 #include "Player.h"
 #include "Playerbots.h"
 #include "ScriptMgr.h"
-#include "SpellAuraEffects.h"
-#include "SpellScript.h"
-#include "SpellScriptLoader.h"
 
-enum CustomSprint
+namespace
 {
-    SPELL_CUSTOM_SPRINT    = 56354,
-    SPRINT_DURATION_MS     = 20 * IN_MILLISECONDS,
-    SPRINT_COOLDOWN_MS     = 35 * IN_MILLISECONDS,
-    SPRINT_SPEED_BONUS_PCT = 50
-};
-
-class spell_custom_sprint : public SpellScript
-{
-    PrepareSpellScript(spell_custom_sprint);
-
-    void HandleAfterHit()
+    // The id of the Sprint spell (world.plugin_ids), 0 while the plugin's patches are not installed.
+    uint32 SprintSpell()
     {
-        if (!GetCaster()->IsPlayer())
-            return;
-
-        if (Aura* aura = GetHitAura())
+        static uint32 const id = []
         {
-            aura->SetMaxDuration(SPRINT_DURATION_MS);
-            aura->SetDuration(SPRINT_DURATION_MS);
-        }
+            QueryResult r = WorldDatabase.Query("SELECT `id` FROM `plugin_ids` WHERE `plugin` = 'lonelyice.qol' AND `name` = 'sprint'");
+            uint32 v = r ? r->Fetch()[0].Get<uint32>() : 0;
+            if (!v)
+                LOG_ERROR("module", "lonelyice.qol: no id for the Sprint spell, its patches are not installed");
+            return v;
+        }();
+        return id;
     }
+}
 
-    void HandleAfterCast()
-    {
-        Player* player = GetCaster()->ToPlayer();
-        if (!player)
-            return;
-
-        player->AddSpellCooldown(SPELL_CUSTOM_SPRINT, 0, SPRINT_COOLDOWN_MS);
-
-        WorldPacket data;
-        player->BuildCooldownPacket(data, SPELL_COOLDOWN_FLAG_NONE, SPELL_CUSTOM_SPRINT, SPRINT_COOLDOWN_MS);
-        player->SendDirectMessage(&data);
-    }
-
-    void Register() override
-    {
-        AfterHit += SpellHitFn(spell_custom_sprint::HandleAfterHit);
-        AfterCast += SpellCastFn(spell_custom_sprint::HandleAfterCast);
-    }
-};
-
-class spell_custom_sprint_aura : public AuraScript
+// Looks the spell id up before the world runs (the first lookup is a database query).
+class CustomSprintWorldScript : public WorldScript
 {
-    PrepareAuraScript(spell_custom_sprint_aura);
+public:
+    CustomSprintWorldScript() : WorldScript("CustomSprintWorldScript", { WORLDHOOK_ON_STARTUP }) { }
 
-    void CalcAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
+    void OnStartup() override
     {
-        if (Unit* caster = GetCaster())
-            if (caster->IsPlayer())
-                amount = SPRINT_SPEED_BONUS_PCT;
-    }
-
-    void Register() override
-    {
-        DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_custom_sprint_aura::CalcAmount, EFFECT_0, SPELL_AURA_MOD_INCREASE_SPEED);
+        SprintSpell();
     }
 };
-
 // Teaches the spell to every character (existing and new, including bots) on login
 class CustomSprintPlayerScript : public PlayerScript
 {
@@ -86,8 +48,8 @@ public:
 
     void OnPlayerLogin(Player* player) override
     {
-        if (!player->HasSpell(SPELL_CUSTOM_SPRINT))
-            player->learnSpell(SPELL_CUSTOM_SPRINT);
+        if (SprintSpell() && !player->HasSpell(SprintSpell()))
+            player->learnSpell(SprintSpell());
     }
 };
 
@@ -134,13 +96,16 @@ public:
         if (!session || !session->IsBot())
             return;
 
+        if (!SprintSpell())
+            return;
+
         BotSprintState* st = bot->CustomData.GetDefault<BotSprintState>("custom_bot_sprint");
         st->timer += diff;
         if (st->timer < CHECK_MS)
             return;
         st->timer = 0;
 
-        Aura* own = bot->GetAura(SPELL_CUSTOM_SPRINT);
+        Aura* own = bot->GetAura(SprintSpell());
         if (!own)
             st->echo = false;
 
@@ -152,11 +117,11 @@ public:
         if (!usable)
         {
             if (own && st->echo)
-                bot->RemoveAurasDueToSpell(SPELL_CUSTOM_SPRINT);
+                bot->RemoveAurasDueToSpell(SprintSpell());
             return;
         }
 
-        Aura* masterSprint = master->GetAura(SPELL_CUSTOM_SPRINT);
+        Aura* masterSprint = master->GetAura(SprintSpell());
         float const dist = bot->GetDistance(master);
 
         // echo the master's sprint (same remaining time, no cooldown)
@@ -164,7 +129,7 @@ public:
         {
             if (!own)
             {
-                if (Aura* echo = bot->AddAura(SPELL_CUSTOM_SPRINT, bot))
+                if (Aura* echo = bot->AddAura(SprintSpell(), bot))
                 {
                     echo->SetMaxDuration(masterSprint->GetDuration());
                     echo->SetDuration(masterSprint->GetDuration());
@@ -179,7 +144,7 @@ public:
             // the master's sprint ended: drop the echo; a catch-up sprint ends once the bot is close again
             if (st->echo || dist <= STOP_DIST)
             {
-                bot->RemoveAurasDueToSpell(SPELL_CUSTOM_SPRINT);
+                bot->RemoveAurasDueToSpell(SprintSpell());
                 st->echo = false;
             }
             return;
@@ -187,15 +152,15 @@ public:
 
         // catch-up: far behind and following (a spline in progress), own sprint off cooldown
         bool const moving = bot->movespline && !bot->movespline->Finalized();
-        if (dist > CATCHUP_DIST && moving && !bot->HasSpellCooldown(SPELL_CUSTOM_SPRINT) &&
-            !bot->IsNonMeleeSpellCast(false) && bot->HasSpell(SPELL_CUSTOM_SPRINT))
-            bot->CastSpell(bot, SPELL_CUSTOM_SPRINT, false);
+        if (dist > CATCHUP_DIST && moving && !bot->HasSpellCooldown(SprintSpell()) &&
+            !bot->IsNonMeleeSpellCast(false) && bot->HasSpell(SprintSpell()))
+            bot->CastSpell(bot, SprintSpell(), false);
     }
 };
 
 void AddCustomSprintScripts()
 {
-    RegisterSpellAndAuraScriptPair(spell_custom_sprint, spell_custom_sprint_aura);
+    new CustomSprintWorldScript();
     new CustomSprintPlayerScript();
     new CustomBotSprintPlayerScript();
 }

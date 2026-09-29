@@ -14,5 +14,5 @@
   "platforms": [ "windows-x64" ],
   "depends": { "playerbots": ">=1.0.0" },
   "server": { "library": "lonelyice_qol" },
-  "databases": { "world": "data/sql/db-world" }
+  "patches": "data/patches.json"
 }
