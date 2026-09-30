@@ -1,7 +1,7 @@
 {
   "format": 1,
   "id": "lonelyice.qol",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "name": { "en": "Quality of life", "ru": "Удобства" },
   "description": {
     "en": "Sprint for every character and auto-loot of money and quest items for real players; bots take no share.",

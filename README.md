@@ -25,7 +25,7 @@ a fork of AzerothCore with runtime plugins, and builds in two ways.
 
 ```
 cmake -S azerothcore-wotlk -B build -DWITH_DYNAMIC_LINKING=ON -DWITH_PLAYERBOTS_HOOKS=ON ^
-      -DAC_PLUGIN_ABI=lonelyice-ac-1 "-DAC_PLUGIN_SOURCE_DIRS=<path>/mod-playerbots;<path>/mod-lonelyice-qol"
+      -DAC_PLUGIN_ABI=lonelyice-ac-2 "-DAC_PLUGIN_SOURCE_DIRS=<path>/mod-playerbots;<path>/mod-lonelyice-qol"
 cmake --build build --config RelWithDebInfo
 ```
 
